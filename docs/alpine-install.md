@@ -11,7 +11,8 @@ PAPPL 1.3.1, CUPS 2.4.19.
 | the app | `/usr/local/bin/konica206-native` | musl build; the repo's committed binaries are glibc builds and do **not** run here - rebuild |
 | PAPPL 1.3.1 | `/usr/local/lib/libpappl.so.1` | Alpine ships no `pappl` package, so it is built from source |
 | vendor stage | `/usr/local/lib/konica/konica-native` | pure C11/libc, from https://github.com/vinod2807/konica-native-musl |
-| vendor runtime data | `/usr/local/lib/konica/KonicaMinolta/245igdi/` | halftone screen + ICC profiles; **not** in this repo (vendor files) |
+| vendor runtime data | `/usr/local/lib/konica/KonicaMinolta/245igdi/` | halftone screen + ICC profiles, installed from `vendor/`; see [vendor/NOTICE](../vendor/NOTICE) |
+| PPD | `/usr/local/share/konica/KonicaMinolta-206-native.ppd` | from `vendor/`; optional for the app |
 | OpenRC service | `/etc/init.d/konica206-native` | `dist/konica206-native.initd` |
 | environment | `/etc/conf.d/konica206-native` | `dist/konica206-native.conf` |
 | PAPPL state | `/var/lib/konica206-native.state` | as root; under `$HOME` for a normal user |
@@ -23,13 +24,15 @@ PAPPL 1.3.1, CUPS 2.4.19.
 sudo scripts/install-alpine.sh [queue-name]     # default queue name: konica206
 ```
 
-It builds PAPPL, builds and installs the app, installs the OpenRC service,
-starts it and adds the queue for the printer found on USB.
+It builds PAPPL, builds and installs the app, installs the vendor runtime data
+and the PPD from `vendor/`, installs the OpenRC service, starts it and adds the
+queue for the printer found on USB. It then runs a preflight check and tells you
+if the halftone screen or an ICC profile is missing (without them konica-native
+refuses to print).
 
-The vendor runtime data and the PPD are **not** installed by the script: both are
-vendor files and stay out of this repository. The runtime data is required for
-real output (konica-native exits 1 and writes nothing without the halftone
-screen and the two ICC profiles). The PPD is optional - see below.
+The vendor files in `vendor/` are Konica Minolta's, not ours - see
+[vendor/NOTICE](../vendor/NOTICE). Everything else (app, service, installer,
+tests) is this project's own work and needs none of them.
 
 ## The queue
 

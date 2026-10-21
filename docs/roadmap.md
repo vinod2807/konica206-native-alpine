@@ -458,8 +458,10 @@ Add a check to the test plan: after any queue regeneration, `lpoptions -p konica
   last two release binaries on the machine.
 - **Docs to maintain:** `README.md` (quick start), `INSTALL.md` (agent-oriented install, already written),
   this guide, `CHANGELOG.md`, `docs/hardware-notes.md` (the facts in 1.4), `docs/rollback.md`.
-- **Licence file:** state that the Konica filter and driver files are not part of this repository and are not
-  redistributed.
+- **Licence file:** the Konica filter and driver files now live in `vendor/` (halftone screens, ICC profiles and the
+  vendor-derived PPD) so that a fresh install can print; `vendor/NOTICE` states that they are Konica Minolta's, that they
+  are not covered by this repository's licence and that redistributing them needs the vendor's permission. A licence for
+  the code itself is still to be chosen.
 
 ---
 

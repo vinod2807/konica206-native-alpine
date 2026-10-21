@@ -1,0 +1,37 @@
+# Vendor data
+
+The files in this directory are **not** part of this project's code and are **not**
+covered by any licence of this repository. They are Konica Minolta's own driver
+files, taken from the CUPS filter package of the bizhub 206 (the `245igdi`
+runtime), so that a fresh install has everything it needs to produce real output.
+
+| Path | What it is | Used by |
+|---|---|---|
+| `KonicaMinolta/245igdi/Halftones/COPA.DEFAULT.600x600.hft` | the 600 dpi halftone screen | konica-native (mandatory) |
+| `KonicaMinolta/245igdi/Halftones/COPA.DEFAULT.1200x600.hft` | the 1200x600 screen | not used by default |
+| `KonicaMinolta/245igdi/Profiles/sRGB.icm` | input matrix/shaper profile | konica-native (colour table) |
+| `KonicaMinolta/245igdi/Profiles/sGrayInv.icm` | output grey profile | konica-native (colour table) |
+| `KonicaMinolta/245igdi/Profiles/{CIELab,cmy,rgbInv,sGray,swop}.icm` | the remaining vendor profiles | not used by konica-native |
+| `KonicaMinolta/KonicaMinolta-206-native.ppd` | CUPS PPD, derived from the vendor's `245igdi.PPD` | the CUPS queue; the app's `KONICA_PPD` is optional |
+
+## Provenance
+
+Taken from the Konica Minolta bizhub 206 driver's own installation on the
+machine this project was developed on (`245igdi` runtime tree). The PPD is the
+vendor's PPD with the ICC-free full-bleed retrofit applied.
+
+## Licence
+
+These files remain the property of Konica Minolta. They are included here for the
+convenience of people who own a bizhub 206 and want a working install; they are
+not covered by this repository's licence, and redistributing them - in this
+repository or elsewhere - needs the vendor's permission.
+
+Nothing in this repository's *code* needs these files: the app, the test suite
+(`make check`, `make check-native`) and the whole IPP path work without them.
+They are only needed to turn a job into paper, because konica-native loads the
+halftone screen and the two ICC profiles before it writes the first byte of a
+job and refuses to emit anything without them.
+
+If you prefer not to have them, delete this directory and point
+`KONICA_VENDOR_FILTER` at a filter that brings its own data.
