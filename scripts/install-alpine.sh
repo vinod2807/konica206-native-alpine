@@ -44,12 +44,30 @@ make install >/dev/null
 
 say "konica206-native"
 cd "$HERE"
+# The committed binaries are glibc builds.  On musl they do not even start, and
+# make would happily install them because their mtime is newer than the
+# sources - so check that the binary runs here and rebuild if it does not.
+if ! ./konica206-native --version >/dev/null 2>&1; then
+  say "the committed binaries do not run here (glibc build) - rebuilding"
+  make clean >/dev/null
+fi
 make >/dev/null
 make install >/dev/null
+if ! /usr/local/bin/konica206-native --version >/dev/null 2>&1; then
+  echo "the installed binary does not run on this system" >&2
+  exit 1
+fi
 
 say "OpenRC service"
 install -D -m 755 dist/konica206-native.initd /etc/init.d/konica206-native
-install -D -m 644 dist/konica206-native.conf /etc/conf.d/konica206-native
+# The conf.d file holds host-specific settings (listen address, PPD path, ...):
+# never overwrite one that is already there.
+if [ -e /etc/conf.d/konica206-native ]; then
+  say "keeping the existing /etc/conf.d/konica206-native"
+  grep -E '^export ' /etc/conf.d/konica206-native | sed 's/^/    /'
+else
+  install -D -m 644 dist/konica206-native.conf /etc/conf.d/konica206-native
+fi
 
 say "vendor runtime data and PPD"
 # The halftone screen and the two ICC profiles: konica-native loads them before
@@ -83,9 +101,13 @@ say "queue '$QUEUE' on port $PORT"
 SERIAL=${KONICA_SERIAL:-$(lsusb -d 132b:232b -v 2>/dev/null | sed -n 's/^[[:space:]]*iSerial[[:space:]]*[0-9]*[[:space:]]*\(.*\)$/\1/p' | head -1)}
 [ -n "$SERIAL" ] || { echo "could not read the printer serial; set KONICA_SERIAL=" >&2; exit 1; }
 echo "printer serial: $SERIAL"
-"$PREFIX/bin/konica206-native" add -d "$QUEUE" -u "ipp://localhost:$PORT" \
-  -m konica-bizhub-206 \
-  -v "konica://KONICA%20MINOLTA/206?serial=$SERIAL"
+if "$PREFIX/bin/konica206-native" printers -u "ipp://localhost:$PORT" 2>/dev/null | grep -qx "$QUEUE"; then
+  say "queue '$QUEUE' already exists"
+else
+  "$PREFIX/bin/konica206-native" add -d "$QUEUE" -u "ipp://localhost:$PORT" \
+    -m konica-bizhub-206 \
+    -v "konica://KONICA%20MINOLTA/206?serial=$SERIAL"
+fi
 
 say "done"
 echo "queue URI: ipp://\$(hostname -i):$PORT/ipp/print/$QUEUE"
