@@ -36,6 +36,12 @@ check: test-chunking test-ppd
 check-watchdog: test-watchdog
 	./test-watchdog
 
+# End-to-end test of the vendor-filter stage: no printer, no USB, no CUPS queue.
+# Uses a stand-in filter by default; NATIVE=<path> runs the real konica-native.
+#   NATIVE=/usr/local/lib/konica/konica-native make check-native
+check-native: konica206-native
+	./test/test_native_filter.sh
+
 test-watchdog: test/test_watchdog.c src/konica_watch.c
 	$(CC) $(CFLAGS) -o $@ $^ $(PAPPL_LIBS) -pthread
 
@@ -55,4 +61,4 @@ check-ppd: test-ppd
 clean:
 	rm -f konica206-native konica-send konica-render test-chunking test-ppd
 
-.PHONY: all check install clean
+.PHONY: all check check-native check-watchdog install clean

@@ -14,6 +14,12 @@ No cupsd queue, PPD, CUPS filter chain or CUPS USB backend is involved at runtim
     sudo dnf install pappl-devel libusb1-devel cups-devel gcc make     # Fedora
     make && make check
 
+## Test
+    make check           # chunking + PPD regression (no printer)
+    make check-watchdog  # stuck-watchdog policy proof (~40 s, no printer)
+    make check-native    # vendor-filter stage end to end (no printer, no USB)
+    NATIVE=/usr/local/lib/konica/konica-native make check-native   # the real filter
+
 ## Staged testing (matches the plan)
 **Stage 1: renderer proof, no printer**
     ./konica-render known.pdf out.bin           # prints filters, PPD, libdir, options used
@@ -48,6 +54,9 @@ Stop the old `konica206uri` app (or unplug/replug) before a physical test: both 
 | KONICA_LISTEN | `localhost` (or `any`); server `-o listen=` overrides |
 | KONICA_MAX_MEM_MB | 2048 (0 disables address-space cap on filter children) |
 | KONICA_MAX_FILE_MB | 512 (0 disables output-size cap on filter children) |
+
+To run the vendor stage on Alpine/musl (konica-native instead of the vendor `245igdirf`), see
+[docs/native-filter-musl.md](docs/native-filter-musl.md).
 
 ## Unsupported inputs
 
