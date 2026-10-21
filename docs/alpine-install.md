@@ -50,8 +50,9 @@ Defaults, as published by the driver:
 | `print-color-mode-default` | `monochrome` |
 | `printer-resolution-default` | `600dpi` |
 
-`KONICA_LISTEN=localhost` (the default) restricts IPP to the loopback; set it to
-`any` for LAN clients. The PAPPL web interface follows the same setting.
+`KONICA_LISTEN=localhost` (the app's default) restricts IPP to the loopback; the
+shipped `dist/konica206-native.conf` sets `any` so LAN clients can print. The
+PAPPL web interface follows the same setting and has no authentication.
 
 Check it:
 
