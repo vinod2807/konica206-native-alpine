@@ -16,6 +16,7 @@ main(int argc, char **argv)
   char opts[512] = "", log[8192] = "";
   int opt;
   struct stat st;
+  int pages = 0;
 
   konica_cfg_load(&cfg);
   while ((opt = getopt(argc, argv, "o:")) != -1)
@@ -33,7 +34,7 @@ main(int argc, char **argv)
           cfg.raster_filter, cfg.vendor_filter, cfg.ppd, cfg.libdir, opts);
 
   if (konica_render_pdf(&cfg, argv[optind], argv[optind + 1], 1, getenv("USER") ? getenv("USER") : "user",
-                        "test", opts, NULL, NULL, log, sizeof(log)) != 0)
+                        "test", opts, NULL, NULL, log, sizeof(log), &pages) != 0)
   {
     fprintf(stderr, "RENDER FAILED\n%s", log);
     return 1;
@@ -41,6 +42,6 @@ main(int argc, char **argv)
   if (log[0])
     fprintf(stderr, "filter stderr:\n%s", log);
   stat(argv[optind + 1], &st);
-  fprintf(stderr, "OK: wrote %lld bytes to %s\n", (long long)st.st_size, argv[optind + 1]);
+  fprintf(stderr, "OK: wrote %lld bytes (%d pages) to %s\n", (long long)st.st_size, pages, argv[optind + 1]);
   return 0;
 }

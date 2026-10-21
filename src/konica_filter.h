@@ -44,10 +44,12 @@ int konica_run_filter(const konica_cfg_t *cfg, const char *prog,
                       char *log, size_t logsize);
 
 /* Full render: pdf_path -> out_path (ready-to-send printer data).
- * Creates and removes its own temp dir under cfg->spooldir. */
+ * Creates and removes its own temp dir under cfg->spooldir.
+ * pages_out (may be NULL) receives the number of sides rendered, for accounting. */
 int konica_render_pdf(const konica_cfg_t *cfg, const char *pdf_path, const char *out_path,
                       int job_id, const char *user, const char *title, const char *options,
-                      konica_cancel_cb cancel, void *cancel_ud, char *log, size_t logsize);
+                      konica_cancel_cb cancel, void *cancel_ud, char *log, size_t logsize,
+                      int *pages_out);
 
 /* Vendor stage only: CUPS raster file -> printer data (used for PWG/URF/JPEG/PNG jobs). */
 int konica_render_raster(const konica_cfg_t *cfg, const char *raster_path, const char *out_path,

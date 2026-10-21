@@ -208,7 +208,6 @@ send_spool(pappl_job_t *job, pappl_device_t *device, const char *spool, int copi
     }
     papplDeviceFlush(device);
   }
-  papplJobSetImpressions(job, 1);
   ok = true;
 
 done:
@@ -221,7 +220,7 @@ konica_printfile(pappl_job_t *job, pappl_pr_options_t *options, pappl_device_t *
 {
   const char *pdf = papplJobGetFilename(job);
   char spool[700], opts[512], log[4096] = "";
-  int fd, copies = options->copies > 0 ? options->copies : 1;
+  int fd, copies = options->copies > 0 ? options->copies : 1, pages = 0;
   bool ok = false;
 
   snprintf(spool, sizeof(spool), "%s/konica-out-XXXXXX", cfg.spooldir);
@@ -246,7 +245,7 @@ konica_printfile(pappl_job_t *job, pappl_pr_options_t *options, pappl_device_t *
   /* Render fully BEFORE touching the printer: a failed render never sends a partial job. */
   konica_watch_job_start(job);
   if (konica_render_pdf(&cfg, pdf, spool, papplJobGetID(job), papplJobGetUsername(job),
-                        papplJobGetName(job), opts, job_cancel_cb, job, log, sizeof(log)) != 0)
+                        papplJobGetName(job), opts, job_cancel_cb, job, log, sizeof(log), &pages) != 0)
   {
     papplLogJob(job, PAPPL_LOGLEVEL_ERROR, "Render failed: %s", log);
     papplJobSetReasons(job, PAPPL_JREASON_ABORTED_BY_SYSTEM, PAPPL_JREASON_NONE);
@@ -256,6 +255,16 @@ konica_printfile(pappl_job_t *job, pappl_pr_options_t *options, pappl_device_t *
     papplLogJob(job, PAPPL_LOGLEVEL_DEBUG, "Filter output: %s", log);
 
   ok = send_spool(job, device, spool, copies);
+  if (ok)
+  {
+    /* PAPPL counts a single impression after printfile_cb returns (job-process.c,
+     * print_job); add the rest so a multi-page job is accounted for correctly. */
+    int total = pages > 0 ? pages * copies : 1;
+
+    papplJobSetImpressions(job, total);
+    if (total > 1)
+      papplJobSetImpressionsCompleted(job, total - 1);
+  }
 
 out:
   konica_watch_job_done(job);

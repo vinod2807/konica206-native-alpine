@@ -803,7 +803,8 @@ raster_append_page(cups_raster_t *ras, const unsigned char *px, int sw, int sh,
 static int
 render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ras_path,
                    const char *options, int res,
-                   konica_cancel_cb cancel, void *cancel_ud, char *log, size_t logsize)
+                   konica_cancel_cb cancel, void *cancel_ud, char *log, size_t logsize,
+                   int *pages_out)
 {
   char dir[600], psname[64], pat[768];
   double pw = 0, ph = 0;
@@ -875,6 +876,8 @@ render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ra
     free(px);
   }
   rc = 0;
+  if (pages_out)
+    *pages_out = pages;
 
 out:
   if (ras)
@@ -946,13 +949,66 @@ konica_render_raster(const konica_cfg_t *cfg, const char *raster_path, const cha
   return 0;
 }
 
+/* Count pages in a CUPS raster file.  Only needed when an external
+ * PDF->raster filter produced it; the builtin renderer reports its own count. */
+static int
+raster_pages(const char *path)
+{
+  int fd = open(path, O_RDONLY), pages = 0;
+  cups_raster_t *ras;
+  unsigned char *buf = NULL;
+  unsigned bufsize = 0;
+
+  if (fd < 0)
+    return 0;
+  if ((ras = cupsRasterOpen(fd, CUPS_RASTER_READ)) == NULL)
+  {
+    close(fd);
+    return 0;
+  }
+
+  for (;;)
+  {
+    cups_page_header2_t hdr;
+    unsigned y;
+
+#if CUPS_VERSION_MAJOR >= 3
+    if (!cupsRasterReadHeader(ras, &hdr))
+#else
+    if (!cupsRasterReadHeader2(ras, &hdr))
+#endif
+      break;
+
+    pages ++;
+    if (hdr.cupsBytesPerLine > bufsize)
+    {
+      unsigned char *nb = realloc(buf, hdr.cupsBytesPerLine);
+      if (!nb)
+        break;
+      buf = nb;
+      bufsize = hdr.cupsBytesPerLine;
+    }
+    for (y = 0; y < hdr.cupsHeight; y ++)
+      if (cupsRasterReadPixels(ras, buf, hdr.cupsBytesPerLine) != hdr.cupsBytesPerLine)
+        break;
+  }
+
+  free(buf);
+  cupsRasterClose(ras);
+  return pages;
+}
+
 int
 konica_render_pdf(const konica_cfg_t *cfg, const char *pdf_path, const char *out_path,
                   int job_id, const char *user, const char *title, const char *options,
-                  konica_cancel_cb cancel, void *cancel_ud, char *log, size_t logsize)
+                  konica_cancel_cb cancel, void *cancel_ud, char *log, size_t logsize,
+                  int *pages_out)
 {
   char dir[600], raster[700];
   int rc = -1;
+
+  if (pages_out)
+    *pages_out = 0;
 
   snprintf(dir, sizeof(dir), "%s/konica-XXXXXX", cfg->spooldir);
   if (!mkdtemp(dir))
@@ -977,15 +1033,18 @@ konica_render_pdf(const konica_cfg_t *cfg, const char *pdf_path, const char *out
         res = rx;
     }
     if (render_pdf_builtin(cfg, pdf_path, raster, options, res,
-                           cancel, cancel_ud, log, logsize) != 0)
+                           cancel, cancel_ud, log, logsize, pages_out) != 0)
       goto out;
   }
-  else if (konica_run_filter(cfg, cfg->raster_filter, "application/pdf", "application/vnd.cups-raster",
-                             job_id, user, title, options, pdf_path, NULL, raster,
-                             cancel, cancel_ud, log, logsize) != 0)
+  else
   {
     /* Stage 1: PDF -> CUPS raster, geometry/colorspace taken from the PPD. */
-    goto out;
+    if (konica_run_filter(cfg, cfg->raster_filter, "application/pdf", "application/vnd.cups-raster",
+                          job_id, user, title, options, pdf_path, NULL, raster,
+                          cancel, cancel_ud, log, logsize) != 0)
+      goto out;
+    if (pages_out)
+      *pages_out = raster_pages(raster);
   }
 
   /* Stage 2: Konica vendor raster filter, linked against its private libcups. */

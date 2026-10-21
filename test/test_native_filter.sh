@@ -84,6 +84,8 @@ export KONICA_VENDOR_FILTER="$T/filter-wrapper.sh"
 export KONICA_PPD="$HERE/test/ppd-fixture.ppd"
 export KONICA_SPOOLDIR="$T/spool"
 export KONICA_STUCK_SECS=0
+# The PDF job below needs the builtin renderer (gs); the PNG job uses the raster path.
+export KONICA_PDF_RENDERER=builtin
 
 U=ipp://localhost:$PORT
 "$APP" server -o server-port=$PORT -o log-file="$T/s.log" -o spool-directory="$T/spool" >"$T/srv.out" 2>&1 &
@@ -141,4 +143,24 @@ grep -q "^PPD=$HERE/test/ppd-fixture.ppd$" "$rec" || fail "no PPD in the filter 
 if grep -q '^KONICA_' "$rec"; then fail "the filter environment carries KONICA_* variables"; fi
 
 echo "PASS test_native_filter ($MODE): $COPIES collated streams ($(wc -c < "$f") B), filter argv ok"
+
+# Job accounting: a two-page PDF must report two impressions (sides), not one.
+# PAPPL adds a single impression itself after printfile_cb; the app adds the rest.
+if command -v gs >/dev/null 2>&1; then
+  gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile="$T/two.pdf" -c \
+     "/Helvetica findfont 24 scalefont setfont 72 700 moveto (page 1) show showpage 72 700 moveto (page 2) show showpage" \
+     >/dev/null 2>&1 || fail "gs could not create the two-page PDF"
+  "$APP" submit -u "$U/ipp/print/t" -o copies=1 -o sides=two-sided-long-edge "$T/two.pdf" >/dev/null 2>&1 ||
+    fail "submit two-page PDF"
+  i=0
+  while [ $i -lt 120 ] && ! grep -aq 'job-impressions-completed=2' "$T/s.log" 2>/dev/null; do
+    i=$((i + 1)); sleep 1
+  done
+  grep -aq 'job-impressions-completed=2' "$T/s.log" ||
+    fail "two-page PDF did not report 2 impressions"
+  echo "PASS test_native_filter: two-page PDF reports 2 impressions"
+else
+  echo "SKIP impressions check: gs not installed"
+fi
+
 exit 0
