@@ -45,7 +45,7 @@ Stop the old `konica206uri` app (or unplug/replug) before a physical test: both 
 | KONICA_VENDOR_FILTER | /usr/local/lib/konica/KonicaMinolta/245igdi/Filters/245igdirf |
 | KONICA_RASTER_FILTER | /usr/lib/cups/filter/pdftoraster |
 | KONICA_LIBDIR | /usr/local/lib/konica/lib (private libcups/libcupsimage) |
-| KONICA_PPD | /var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd |
+| KONICA_PPD | /var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd (optional: see below) |
 | KONICA_SERIAL | A8A6041029423 |
 | KONICA_SPOOLDIR | /var/tmp |
 | KONICA_FILTER_TIMEOUT | 300 (seconds per stage) |
@@ -57,6 +57,13 @@ Stop the old `konica206uri` app (or unplug/replug) before a physical test: both 
 
 To run the vendor stage on Alpine/musl (konica-native instead of the vendor `245igdirf`), see
 [docs/native-filter-musl.md](docs/native-filter-musl.md).
+
+## The PPD is optional
+
+CUPS 3.0 drops PPD support, so the app does not depend on one: the page geometry, the
+tray-to-`MediaPosition` map and the duplex back-side rule (`cupsBackSide: Rotated`) are compiled in.
+A readable `KONICA_PPD` overrides all three - keep one for another printer model. With no PPD the
+output is byte-identical to the PPD run for this printer (`test/test_ppd.c` pins both paths).
 
 ## Unsupported inputs
 

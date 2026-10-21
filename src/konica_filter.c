@@ -16,6 +16,9 @@ extern char **environ;
 
 static void konica_child_limits(const konica_cfg_t *cfg);
 
+/* Defined further down, next to the other PPD helpers. */
+static int ppd_has_option(const char *ppd_path, const char *ui, const char *name);
+
 static void
 env_or(char *dst, size_t n, const char *name, const char *def)
 {
@@ -288,6 +291,127 @@ ppd_backside(const char *ppd_path)
   return 0;
 }
 
+/* ---- built-in defaults -------------------------------------------------
+ *
+ * The PPD is optional: CUPS 3.0 drops PPD support, so the printer's page
+ * geometry, the tray map and the duplex back-side rule are compiled in.  A
+ * readable PPD still wins - it is authoritative, exactly as before - so a PPD
+ * for a different model keeps working.  Without one these tables are used
+ * instead of silently falling back to A4 geometry, no tray and no back-side
+ * transform (the latter prints duplex back pages upside down).
+ */
+
+typedef struct { const char *ppd; double w, h; } paper_t;
+
+static const paper_t papers[] =
+{
+  { "A3",        842.0,  1191.0 },
+  { "A4",        595.0,   842.0 },
+  { "A5",        420.0,   595.0 },
+  { "A6",        297.0,   420.0 },
+  { "B4",        729.0,  1032.0 },
+  { "B5",        516.0,   729.0 },
+  { "Letter",    612.0,   792.0 },
+  { "Legal",     612.0,  1008.0 },
+  { "Executive", 522.0,   756.0 },
+  { "Statement", 396.0,   612.0 },
+  { NULL,          0.0,     0.0 }
+};
+
+typedef struct { const char *slot; int position; } slot_t;
+
+static const slot_t slots[] =
+{
+  { "Auto",   1 },
+  { "Bypass", 2 },
+  { "Tray1",  3 },
+  { "Tray2",  4 },
+  { "Tray3",  5 },
+  { "Tray4",  8 },
+  { "Tray5",  9 },
+  { NULL,      0 }
+};
+
+/* This printer's duplex back-side rule: cupsBackSide "Rotated" - the back
+ * page is rotated 180 degrees (see the cups-filters rule table above). */
+#define BACKSIDE_DEFAULT 'R'
+
+/* Is the PPD there at all? */
+static int
+ppd_readable(const char *ppd_path)
+{
+  FILE *fp = (ppd_path && *ppd_path) ? fopen(ppd_path, "r") : NULL;
+
+  if (fp)
+  {
+    fclose(fp);
+    return 1;
+  }
+  return 0;
+}
+
+/* Paper size in points: the PPD if there is one, else the built-in table. */
+static int
+paper_points(const konica_cfg_t *cfg, const char *name, double *w, double *h)
+{
+  if (ppd_readable(cfg->ppd))
+    return ppd_paper_points(cfg->ppd, name, w, h);
+
+  for (const paper_t *p = papers; p->ppd; p++)
+    if (!strcmp(p->ppd, name))
+    {
+      *w = p->w;
+      *h = p->h;
+      return 0;
+    }
+  return -1;
+}
+
+/* Tray -> MediaPosition: the PPD if there is one, else the built-in table. */
+static int
+media_position(const konica_cfg_t *cfg, const char *slot)
+{
+  if (ppd_readable(cfg->ppd))
+    return ppd_media_position(cfg->ppd, slot);
+
+  for (const slot_t *s = slots; s->slot; s++)
+    if (!strcmp(s->slot, slot))
+      return s->position;
+  return 0;
+}
+
+/* Duplex back-side rule: the PPD if there is one, else the built-in default. */
+static char
+backside_rule(const konica_cfg_t *cfg)
+{
+  if (ppd_readable(cfg->ppd))
+    return ppd_backside(cfg->ppd);
+  return BACKSIDE_DEFAULT;
+}
+
+/* Does the driver know this option?  A readable PPD is authoritative; without
+ * one the built-in tables decide. */
+static int
+konica_has_option(const konica_cfg_t *cfg, const char *ui, const char *name)
+{
+  if (ppd_readable(cfg->ppd))
+    return ppd_has_option(cfg->ppd, ui, name);
+
+  if (!strcmp(ui, "PageSize"))
+  {
+    for (const paper_t *p = papers; p->ppd; p++)
+      if (!strcmp(p->ppd, name))
+        return 1;
+  }
+  else if (!strcmp(ui, "InputSlot"))
+  {
+    for (const slot_t *s = slots; s->slot; s++)
+      if (!strcmp(s->slot, name))
+        return 1;
+  }
+  return 0;
+}
+
 /* Extract "InputSlot=<name>" from a CUPS option string. */
 static void
 opt_inputslot(const char *options, char *name, size_t n)
@@ -316,7 +440,7 @@ slot_media_pos(const konica_cfg_t *cfg, const char *options)
   opt_inputslot(options, slot, sizeof(slot));
   if (!slot[0])
     return 0;
-  return ppd_media_position(cfg->ppd, slot);
+  return media_position(cfg, slot);
 }
 
 /* Extract "PageSize=<name>" from a CUPS option string. */
@@ -690,7 +814,7 @@ render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ra
   opt_pagesize(options, psname, sizeof(psname));
   if (!psname[0])
     snprintf(psname, sizeof(psname), "A4");
-  if (ppd_paper_points(cfg->ppd, psname, &pw, &ph) != 0)
+  if (paper_points(cfg, psname, &pw, &ph) != 0)
   {
     pw = 595.2756;
     ph = 841.8898;
@@ -717,7 +841,7 @@ render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ra
   if (pages < 0)
     goto out;
 
-  char backside = ppd_backside(cfg->ppd);
+  char backside = backside_rule(cfg);
 
   fd = open(ras_path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd < 0)
@@ -938,7 +1062,7 @@ konica_build_options(const konica_cfg_t *cfg, char *out, size_t outsize,
     for (int i = 0; pagesizes[i].pwg; i++)
       if (!strcmp(pwg_media_name, pagesizes[i].pwg))
       {
-        if (ppd_has_option(cfg->ppd, "PageSize", pagesizes[i].ppd))
+        if (konica_has_option(cfg, "PageSize", pagesizes[i].ppd))
           used += snprintf(out + used, outsize - used, "PageSize=%s ", pagesizes[i].ppd);
         break;
       }
@@ -947,7 +1071,7 @@ konica_build_options(const konica_cfg_t *cfg, char *out, size_t outsize,
     for (int i = 0; sources[i].pwg; i++)
       if (!strcmp(pwg_source_name, sources[i].pwg))
       {
-        if (ppd_has_option(cfg->ppd, "InputSlot", sources[i].ppd))
+        if (konica_has_option(cfg, "InputSlot", sources[i].ppd))
           used += snprintf(out + used, outsize - used, "InputSlot=%s ", sources[i].ppd);
         break;
       }
