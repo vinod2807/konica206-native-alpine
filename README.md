@@ -3,6 +3,14 @@
 Standalone PAPPL Printer Application for the Konica Minolta bizhub 206 (USB, GDI-only).
 Implements Stages 1-3 of `konica206-native-pappl-plan.md`.
 
+> **Alpine/musl edition.** The vendor stage is
+> [konica-native](https://github.com/vinod2807/konica-native-musl) (pure C11/libc) instead of
+> the vendor `245igdirf`, so the printer stage runs on musl/Alpine; the PPD is optional; and
+> there is an OpenRC service, an installer and an end-to-end test harness.
+> See [docs/alpine-install.md](docs/alpine-install.md) and
+> [docs/native-filter-musl.md](docs/native-filter-musl.md).
+> The app itself is the one from [vinod2807/konica206-native](https://github.com/vinod2807/konica206-native).
+
 ```
 IPP client -> PAPPL -> pdftoraster -> 245igdirf (private libcups) -> libusb, 8192-byte chunks -> bizhub 206
                  \-> PWG/URF/JPEG/PNG -> CUPS raster -> 245igdirf -> libusb
