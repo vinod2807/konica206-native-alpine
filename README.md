@@ -14,6 +14,9 @@ No cupsd queue, PPD, CUPS filter chain or CUPS USB backend is involved at runtim
     sudo dnf install pappl-devel libusb1-devel cups-devel gcc make     # Fedora
     make && make check
 
+On Alpine (musl) - which ships no `pappl` package - see
+[docs/alpine-install.md](docs/alpine-install.md) and `scripts/install-alpine.sh`.
+
 ## Test
     make check           # chunking + PPD regression (no printer)
     make check-watchdog  # stuck-watchdog policy proof (~40 s, no printer)

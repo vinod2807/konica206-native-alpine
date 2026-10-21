@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+name="konica206-native"
+description="Konica Minolta bizhub 206 native PAPPL printer application"
+
+: ${conf:="/etc/conf.d/konica206-native"}
+
+command="/usr/local/bin/konica206-native"
+command_args="server -o server-port=${konica206_port:-8001}"
+command_background="yes"
+
+pidfile="/run/${RC_SVCNAME}.pid"
+
+# PAPPL logs to stderr; keep it in a file (there is no journald on Alpine).
+output_log="/var/log/${RC_SVCNAME}.log"
+error_log="/var/log/${RC_SVCNAME}.log"
+
+depend() {
+	use net
+	after cupsd
+}
+
+start_pre() {
+	# PAPPL keeps the system state in /var/lib/konica206-native.state when run as root.
+	checkpath -q -d -m 0755 /var/lib
+	checkpath -q -f -m 0644 "$output_log"
+}
