@@ -1,0 +1,18 @@
+{
+  # Validate-Job: answers "would you accept this job?" without spooling or
+  # printing.  Use it against the app and against a CUPS proxy queue:
+  #
+  #   ipptool -tv ipp://127.0.0.1:8001/ipp/print/konica206 test/validate-job.test
+  #   ipptool -tv ipp://localhost:631/printers/konica206-ipp  test/validate-job.test
+  OPERATION Validate-Job
+  GROUP operation-attributes-tag
+  ATTR charset attributes-charset utf-8
+  ATTR language attributes-natural-language en
+  ATTR uri printer-uri $uri
+  ATTR name requesting-user-name validate
+  ATTR mimeMediaType document-format application/pdf
+  GROUP job-attributes-tag
+  ATTR keyword media iso_a4_210x297mm
+  ATTR keyword sides one-sided
+  STATUS successful-ok
+}

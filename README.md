@@ -76,6 +76,11 @@ tray-to-`MediaPosition` map and the duplex back-side rule (`cupsBackSide: Rotate
 A readable `KONICA_PPD` overrides all three - keep one for another printer model. With no PPD the
 output is byte-identical to the PPD run for this printer (`test/test_ppd.c` pins both paths).
 
+A CUPS-side queue needs no PPD from you either - `lpadmin -p konica206-ipp -E -v
+ipp://127.0.0.1:8001/ipp/print/konica206 -m everywhere` makes CUPS generate its own
+`ippeve` PPD and relay IPP. See [docs/alpine-install.md](docs/alpine-install.md#one-queue-per-usb-device)
+for the `-E`/`cupsaccept` and error-policy details.
+
 ## Unsupported inputs
 
 `application/postscript` is deliberately unadvertised (PAPPL has no PS
