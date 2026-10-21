@@ -150,4 +150,5 @@ By default it drives a stand-in filter (`test/standin-filter.sh`), so it runs an
 3. The two PDF renderers against each other on the **real** PPD: the vendor's reference raster is
    pdftoraster's A4 page (4961x7016, 8-bit, `A4.Borderless`); confirm the app's raster reaches
    konica-native with the same geometry.
-4. The committed binaries in this repo are glibc builds: rebuild on musl, do not copy them.
+4. Binaries are not committed: build them on the target (the old glibc builds are
+   in the `glibc-binaries` release and do not run on musl).

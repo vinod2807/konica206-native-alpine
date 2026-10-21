@@ -4,5 +4,11 @@ pkg-config
 *.log
 *.bin
 *.state
-test-watchdog
+# build products: always build on the target (the old glibc builds live in the
+# "glibc-binaries" release, not in the tree)
+konica206-native
+konica-send
+konica-render
+test-chunking
 test-ppd
+test-watchdog

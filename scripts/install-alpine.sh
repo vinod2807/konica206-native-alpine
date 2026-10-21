@@ -44,11 +44,10 @@ make install >/dev/null
 
 say "konica206-native"
 cd "$HERE"
-# The committed binaries are glibc builds.  On musl they do not even start, and
-# make would happily install them because their mtime is newer than the
-# sources - so check that the binary runs here and rebuild if it does not.
-if ! ./konica206-native --version >/dev/null 2>&1; then
-  say "the committed binaries do not run here (glibc build) - rebuilding"
+# Binaries are not shipped: build them here.  A stale local build (for example a
+# copy from another architecture) is rebuilt rather than installed.
+if [ -x ./konica206-native ] && ! ./konica206-native --version >/dev/null 2>&1; then
+  say "the local binary does not run here - rebuilding"
   make clean >/dev/null
 fi
 make >/dev/null

@@ -8,7 +8,7 @@ PAPPL 1.3.1, CUPS 2.4.19.
 
 | Piece | Path | Notes |
 |---|---|---|
-| the app | `/usr/local/bin/konica206-native` | musl build; the repo's committed binaries are glibc builds and do **not** run here - rebuild |
+| the app | `/usr/local/bin/konica206-native` | built from source on the target; the installer rebuilds a stale binary |
 | PAPPL 1.3.1 | `/usr/local/lib/libpappl.so.1` | Alpine ships no `pappl` package, so it is built from source |
 | vendor stage | `/usr/local/lib/konica/konica-native` | pure C11/libc, from https://github.com/vinod2807/konica-native-musl |
 | vendor runtime data | `/usr/local/lib/konica/KonicaMinolta/245igdi/` | halftone screen + ICC profiles, installed from `vendor/`; see [vendor/NOTICE](../vendor/NOTICE) |
