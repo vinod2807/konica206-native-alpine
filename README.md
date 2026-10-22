@@ -25,6 +25,11 @@ No cupsd queue, PPD, CUPS filter chain or CUPS USB backend is involved at runtim
 On Alpine (musl) - which ships no `pappl` package - see
 [docs/alpine-install.md](docs/alpine-install.md) and `scripts/install-alpine.sh`.
 
+On Ubuntu, Debian, or Ubuntu-based Puppy (including ResolutePup64), use
+`sudo scripts/install-ubuntu-puppy.sh`. It preserves existing CUPS queues and
+the legacy application, and uses the glibc vendor filter already installed at
+`/usr/local/lib/konica`.
+
 ## Test
     make check           # chunking + PPD regression (no printer)
     make check-watchdog  # stuck-watchdog policy proof (~40 s, no printer)

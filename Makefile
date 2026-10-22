@@ -2,7 +2,10 @@ CC      ?= gcc
 CFLAGS  ?= -O2 -g
 CFLAGS  += -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE
 # Ubuntu ships only pkgconf; override with PKG_CONFIG=pkgconf (or symlink it).
-PKG_CONFIG ?= pkg-config
+PKG_CONFIG ?= $(shell command -v pkg-config 2>/dev/null || command -v pkgconf 2>/dev/null)
+ifeq ($(strip $(PKG_CONFIG)),)
+$(error pkg-config/pkgconf is required; install pkgconf)
+endif
 PAPPL_CFLAGS := $(shell $(PKG_CONFIG) --cflags pappl)
 PAPPL_LIBS   := $(shell $(PKG_CONFIG) --libs pappl)
 USB_CFLAGS   := $(shell $(PKG_CONFIG) --cflags libusb-1.0)
