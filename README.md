@@ -83,8 +83,10 @@ output is byte-identical to the PPD run for this printer (`test/test_ppd.c` pins
 
 A CUPS-side queue needs no PPD from you either - `lpadmin -p konica206-ipp -E -v
 ipp://127.0.0.1:8001/ipp/print/konica206 -m everywhere` makes CUPS generate its own
-`ippeve` PPD and relay IPP. See [docs/alpine-install.md](docs/alpine-install.md#one-queue-per-usb-device)
-for the `-E`/`cupsaccept` and error-policy details.
+`ippeve` PPD and relay IPP. Run it while the queue is idle: re-running it on a
+busy queue changes the PPD and can restart the active job from page 1. See
+[docs/alpine-install.md](docs/alpine-install.md#one-queue-per-usb-device) for
+the `-E`/`cupsaccept` and error-policy details.
 
 ## Unsupported inputs
 

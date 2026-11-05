@@ -194,6 +194,10 @@ sudo lpadmin -p konica206-native \
   -o media-default=iso_a4_210x297mm -o sides-default=one-sided
 ```
 
+**Run this while the queue is idle.** Uploading a PPD makes CUPS restart a
+pending or processing job from page 1, which prints it twice. Check
+`lpstat -o konica206-native` first; if it lists a job, wait for it to finish.
+
 Why: `-m everywhere` lists every size with a `.Borderless` suffix
 (because the driver is full-bleed). The shipped PPD carries real names.
 **Do not reintroduce `ISOB4`/`ISOB5` sizes**: those names are not

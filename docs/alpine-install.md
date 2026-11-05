@@ -75,6 +75,11 @@ lpadmin -p konica206-ipp -E \
         -m everywhere
 ```
 
+**Run this while the queue is idle.** Re-running `lpadmin` with `-m everywhere`
+on an existing queue changes its PPD, and CUPS restarts an active job from
+page 1, which prints it twice. Check `lpstat -o konica206-ipp` first; if it
+lists a job, wait for it to finish.
+
 `-E` is not optional: without it lpadmin creates the queue **disabled and not
 accepting**, and `cupsenable` afterwards only fixes the state - the queue stays
 `printer-is-accepting-jobs=false` until `cupsaccept` runs:

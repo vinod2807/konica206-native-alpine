@@ -270,6 +270,10 @@ Check the logs after each test: `Render failed`, `USB transfer failed`, or `Unab
   sudo lpadmin -p konica206-native \
     -o media-default=iso_a4_210x297mm -o sides-default=one-sided
   ```
+
+  **Run this while the queue is idle.** Uploading a PPD makes CUPS restart a
+  pending or processing job from page 1, which prints it twice. Check
+  `lpstat -o konica206-native` first; if it lists a job, wait for it to finish.
 - Why not `-m everywhere`: the native driver advertises full-bleed geometry
   (zero margins, matching the vendor filter's expectation), so CUPS'
   auto-generated `everywhere` PPD lists every size with a `.Borderless`
@@ -285,7 +289,8 @@ Check the logs after each test: `Render failed`, `USB transfer failed`, or `Unab
   then delete any `ISOB4`/`ISOB5` size lines: those names are not standard
   Windows paper IDs and crash Wine's `gdi32` (divide-by-zero) when printing
   from Adobe Reader or Notepad. Then re-attach it with
-  `lpadmin -p konica206-native -P dist/konica206-native.ppd`.
+  `lpadmin -p konica206-native -P dist/konica206-native.ppd` while the queue
+  is idle (see the warning above).
 - Compare output side by side with `konica206uri` before suggesting a switch.
 
 ---
