@@ -88,7 +88,7 @@ main(int argc, char *argv[])
     CHECK(media_position(&cfg, "Tray9") == 0, "no PPD: unknown slot -> 0");
     /* The back-side rule must not silently disappear: without it duplex back
      * pages come out upside down. */
-    CHECK(backside_rule(&cfg) == 'R', "no PPD: backside -> '%c'", backside_rule(&cfg));
+    CHECK(backside_rule(&cfg) == 0, "no PPD: backside -> '%c' (none)", backside_rule(&cfg));
     CHECK(konica_has_option(&cfg, "PageSize", "A4") == 1, "no PPD: has PageSize A4");
     CHECK(konica_has_option(&cfg, "PageSize", "Nope") == 0, "no PPD: no PageSize Nope");
     CHECK(konica_has_option(&cfg, "InputSlot", "Tray1") == 1, "no PPD: has InputSlot Tray1");

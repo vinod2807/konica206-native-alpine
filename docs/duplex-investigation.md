@@ -50,7 +50,7 @@ including ~2.4% fully-inverted pixels) — but orientation-independent.
    builtin vs `0,0,595,842` / `1.0` on system. Fixed to mirror.
 3. Neither fix changed the binding outcome.
 
-## Conclusion (resolved 2026-10-07)
+## 2026-10-07 conclusion — superseded, see the next section
 
 Root cause found with external review: `pdftoraster` rotates duplex
 back-side pages 180° when the PPD says `*cupsBackSide: Rotated` (ours
@@ -63,3 +63,39 @@ Flipped); offline comparison shows 0.569% bit difference on both pages
 paper. The earlier "no control-byte cause" assessment is superseded:
 the cause was a missing *transformation*, invisible to header/PJL diffs.
 Live default stays `system` until the soak period passes.
+
+## 2026-11-13: the pre-rotation is wrong for the current encoder stage
+
+The conclusion above was measured while the vendor `245igdirf` was the encoder
+stage. On 2026-10-21 the app switched to `konica-native`, which derives
+`DUPLEX`/`BINDING` from the raster header and the job options alone. It never
+sees the PPD's back-side setting, which the vendor filter did receive on its
+command line (`back-side-orientation=Rotated`). The pre-rotation therefore kept
+compensating for a hint that no longer exists.
+
+Straight A/B on an A4 orientation marker sheet (2 pages, duplex long edge,
+flip about the left long edge), same queue and printer, one sheet each:
+
+| job | `*cupsBackSide` the app read | back page on paper |
+|---|---|---|
+| 323 | `Rotated` (app pre-rotated page 2) | upside down |
+| 325 | `Normal` (no pre-rotation) | upright, both sides top-to-bottom |
+
+Offline, with the Normal PPD the duplex raster's page 2 is pixel-identical to
+the simplex render of the same page (previously it matched only after a 180°
+rotation), while the encoder still emits `DUPLEX=ON` + `BINDING=SHORTEDGE` for
+a portrait long-edge job. So the 206's duplexer does the long-edge binding
+itself and the application must not pre-rotate.
+
+Changes: `BACKSIDE_DEFAULT` is now "no rotation", and the install scripts
+derive a `*cupsBackSide: Normal` copy for the app
+(`/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd`) instead of
+using the vendor PPD. The vendor PPD and the PPDs used by the CUPS/legacy
+queues keep `Rotated`, which is still required there (deleting it makes the
+legacy chain print at the wrong edge; see `ubuntu-printing/konica206uri.md`).
+
+Caveat worth keeping in mind: job 324 (old PPD, printed immediately after the
+failing 323) came out upright, which matches the duplex-clutch carry-over
+hypothesis in `konica-retrofit/konica206-duplex-discrepancy.md`. If a back page
+ever comes out inverted again, repeat the same job before changing any
+configuration.

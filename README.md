@@ -61,7 +61,7 @@ Stop the old `konica206uri` app (or unplug/replug) before a physical test: both 
 | KONICA_VENDOR_FILTER | /usr/local/lib/konica/KonicaMinolta/245igdi/Filters/245igdirf |
 | KONICA_RASTER_FILTER | /usr/lib/cups/filter/pdftoraster |
 | KONICA_LIBDIR | /usr/local/lib/konica/lib (private libcups/libcupsimage) |
-| KONICA_PPD | /var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd (optional: see below) |
+| KONICA_PPD | /var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd (optional; the installers point it at a Normal-backside copy: see below) |
 | KONICA_SERIAL | A8A6041029423 |
 | KONICA_SPOOLDIR | /var/tmp |
 | KONICA_FILTER_TIMEOUT | 300 (seconds per stage) |
@@ -77,9 +77,16 @@ To run the vendor stage on Alpine/musl (konica-native instead of the vendor `245
 ## The PPD is optional
 
 CUPS 3.0 drops PPD support, so the app does not depend on one: the page geometry, the
-tray-to-`MediaPosition` map and the duplex back-side rule (`cupsBackSide: Rotated`) are compiled in.
-A readable `KONICA_PPD` overrides all three - keep one for another printer model. With no PPD the
-output is byte-identical to the PPD run for this printer (`test/test_ppd.c` pins both paths).
+tray-to-`MediaPosition` map and the duplex back-side rule (no pre-rotation — this printer's
+duplexer binds the long edge itself) are compiled in. A readable `KONICA_PPD` overrides all
+three - keep one for another printer model. With no PPD the output is byte-identical to the
+PPD run for this printer (`test/test_ppd.c` pins both paths).
+
+The installers point `KONICA_PPD` at `/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd`,
+a copy of the vendor PPD with `*cupsBackSide: Normal`. The vendor file says `Rotated`, which
+pre-rotates duplex backs and prints a long-edge back page upside down (2026-11-13 paper test);
+the vendor copy stays in place for the CUPS/legacy queues. See
+[docs/duplex-investigation.md](docs/duplex-investigation.md).
 
 A CUPS-side queue needs no PPD from you either - `lpadmin -p konica206-ipp -E -v
 ipp://127.0.0.1:8001/ipp/print/konica206 -m everywhere` makes CUPS generate its own
