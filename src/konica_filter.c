@@ -332,18 +332,9 @@ static const slot_t slots[] =
   { NULL,      0 }
 };
 
-/* Back-side rule used when no PPD is readable: no rotation.
- *
- * The duplexer turns a long-edge back page upright by itself (paper test
- * 2026-11-13: job 323 with the cups-filters "Rotated" pre-rotation printed the
- * back upside down, 325 without it printed correctly, everything else equal).
- * The old "Rotated" default came from the pdftoraster reference, which also
- * tells the vendor 245igdirf the PPD's back-side setting on its command line;
- * konica-native derives DUPLEX/BINDING from the raster header and options
- * alone, so the pre-rotation compensated for a hint the current encoder stage
- * never receives. A readable PPD still wins, and the installers point it at a
- * derived Normal-backside copy (see docs/duplex-investigation.md). */
-#define BACKSIDE_DEFAULT 0
+/* This printer's duplex back-side rule: cupsBackSide "Rotated" - the back
+ * page is rotated 180 degrees (see the cups-filters rule table above). */
+#define BACKSIDE_DEFAULT 'R'
 
 /* Is the PPD there at all? */
 static int

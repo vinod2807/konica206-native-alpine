@@ -49,24 +49,6 @@ RASTER=${KONICA_RASTER_FILTER:-/usr/lib/cups/filter/pdftoraster}
 [ -x "$RASTER" ] || die "PDF raster filter not found: $RASTER"
 [ -r "$PPD" ] || die "PPD not found: $PPD"
 
-# The app reads the duplex back-side rule from its PPD.  The vendor PPD says
-# `cupsBackSide: Rotated`, which pre-rotates duplex backs; this printer's
-# duplexer binds the long edge itself, so the pre-rotation prints a long-edge
-# back upside down (2026-11-13 paper test, docs/duplex-investigation.md).
-# Derive a Normal copy for the app and leave the vendor file untouched: the
-# CUPS/legacy queues still need Rotated.  The path matches dist/konica206-native.service.
-NORMAL_PPD=/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd
-install -d -m 755 "$(dirname "$NORMAL_PPD")"
-if grep -q '^\*cupsBackSide:' "$PPD"; then
-    sed 's/^\*cupsBackSide:.*/*cupsBackSide: Normal/' "$PPD" > "$NORMAL_PPD"
-else
-    cp "$PPD" "$NORMAL_PPD"
-    printf '%s\n' '*cupsBackSide: Normal' >> "$NORMAL_PPD"
-fi
-chmod 644 "$NORMAL_PPD"
-grep -qxF '*cupsBackSide: Normal' "$NORMAL_PPD" || die "could not derive $NORMAL_PPD"
-PPD=$NORMAL_PPD
-
 if command -v systemctl >/dev/null 2>&1 && [ "$(cat /proc/1/comm 2>/dev/null || true)" = systemd ]; then
     say "installing systemd unit"
     install -D -m 644 "$HERE/dist/konica206-native.service" \

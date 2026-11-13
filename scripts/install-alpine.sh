@@ -63,14 +63,6 @@ install -D -m 755 dist/konica206-native.initd /etc/init.d/konica206-native
 # never overwrite one that is already there.
 if [ -e /etc/conf.d/konica206-native ]; then
   say "keeping the existing /etc/conf.d/konica206-native"
-  # Older installs point KONICA_PPD at the vendor PPD, which says Rotated and
-  # therefore pre-rotates duplex backs (wrong for this printer since 2026-11-13,
-  # docs/duplex-investigation.md). Repoint exactly that value; leave the rest.
-  if grep -q '^export KONICA_PPD=.*KonicaMinolta-206-native\.ppd' /etc/conf.d/konica206-native; then
-    sed -i 's#^export KONICA_PPD=.*KonicaMinolta-206-native\.ppd#export KONICA_PPD=/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd#' \
-      /etc/conf.d/konica206-native
-    say "repointed KONICA_PPD at the Normal-backside PPD copy"
-  fi
   grep -E '^export ' /etc/conf.d/konica206-native | sed 's/^/    /'
 else
   install -D -m 644 dist/konica206-native.conf /etc/conf.d/konica206-native
@@ -84,14 +76,6 @@ cp -a vendor/KonicaMinolta/245igdi/. /usr/local/lib/konica/KonicaMinolta/245igdi
 install -d -m 755 /usr/local/share/konica
 install -m 644 vendor/KonicaMinolta/KonicaMinolta-206-native.ppd \
   /usr/local/share/konica/KonicaMinolta-206-native.ppd
-# The app reads the back-side rule from its PPD. The vendor file says Rotated,
-# which pre-rotates duplex backs; the 206 binds the long edge itself, so keep
-# the vendor file for the CUPS/legacy queues and derive a Normal copy for the
-# app (2026-11-13 paper test, docs/duplex-investigation.md).
-sed 's/^\*cupsBackSide:.*/*cupsBackSide: Normal/' \
-  /usr/local/share/konica/KonicaMinolta-206-native.ppd \
-  > /usr/local/share/konica/KonicaMinolta-206-native-normal.ppd
-chmod 644 /usr/local/share/konica/KonicaMinolta-206-native-normal.ppd
 
 say "preflight: does the filter have what it needs?"
 # konica-native loads the halftone screen and the two ICC profiles before it
