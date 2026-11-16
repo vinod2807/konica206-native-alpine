@@ -543,7 +543,13 @@ system_cb(int num_options, cups_option_t *options, void *data)
   if (!system)
     return NULL;
 
-  papplSystemAddListeners(system, listen);
+  if (!papplSystemAddListeners(system, listen))
+  {
+    fprintf(stderr, "konica206-native: failed to add listeners on port %d (listen=%s)\n",
+            port, listen ? listen : "any");
+    papplSystemDelete(system);
+    return NULL;
+  }
   papplSystemSetPrinterDrivers(system, 1, drivers, konica_autoadd, NULL, konica_driver, NULL);
   papplSystemSetFooterHTML(system, "konica206-native " VERSION);
   papplSystemSetVersions(system, 1, &ver);
