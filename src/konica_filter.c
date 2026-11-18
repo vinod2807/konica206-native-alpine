@@ -807,7 +807,7 @@ render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ra
                    int *pages_out)
 {
   char dir[600], psname[64], pat[768];
-  double pw = 0, ph = 0;
+  double pw = 0, ph = 0, iw, ih;
   int tw, th, duplex = 0, tumble = 0, pages = 0, fd = -1;
   cups_raster_t *ras = NULL;
   int rc = -1;
@@ -824,6 +824,17 @@ render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ra
     res = 600;
   tw = (int)(pw * res / 72.0 + 0.5);   /* same rounding as pdftoraster */
   th = (int)(ph * res / 72.0 + 0.5);
+
+  /* Fit the PDF inside the engine's imageable area.  raster_append_page() then
+   * centres the result on a full-page white canvas, so the pad is exactly the
+   * non-printable border instead of document content the engine would clip. */
+  iw = pw - 2.0 * KONICA_MARGIN_POINTS;
+  ih = ph - 2.0 * KONICA_MARGIN_POINTS;
+  if (iw <= 0 || ih <= 0)
+  {
+    iw = pw;
+    ih = ph;
+  }
   if (options && strstr(options, "DuplexNoTumble"))
   {
     duplex = 1;
@@ -838,7 +849,7 @@ render_pdf_builtin(const konica_cfg_t *cfg, const char *pdf_path, const char *ra
   snprintf(dir, sizeof(dir), "%s/konica-bi-XXXXXX", cfg->spooldir);
   if (!mkdtemp(dir))
     return -1;
-  pages = gs_pdf_to_pgm(cfg, pdf_path, dir, pw, ph, res, cancel, cancel_ud, log, logsize);
+  pages = gs_pdf_to_pgm(cfg, pdf_path, dir, iw, ih, res, cancel, cancel_ud, log, logsize);
   if (pages < 0)
     goto out;
 

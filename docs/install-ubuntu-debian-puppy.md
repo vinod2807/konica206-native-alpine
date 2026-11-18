@@ -198,8 +198,11 @@ sudo lpadmin -p konica206-native \
 pending or processing job from page 1, which prints it twice. Check
 `lpstat -o konica206-native` first; if it lists a job, wait for it to finish.
 
-Why: `-m everywhere` lists every size with a `.Borderless` suffix
-(because the driver is full-bleed). The shipped PPD carries real names.
+Why: the shipped PPD pins the real size names and the 12 pt imageable area.
+`-m everywhere` now produces the same plain `A4`/`Letter` names (the driver
+advertises the printer's actual margins), so either route works; the pinned
+PPD just keeps the queue stable if the IPP attribute set changes. Older
+full-bleed builds listed every size with a `.Borderless` suffix.
 **Do not reintroduce `ISOB4`/`ISOB5` sizes**: those names are not
 standard Windows paper IDs and crash Wine’s `gdi32` (divide-by-zero)
 when printing from Adobe Reader/Notepad. After any queue regeneration,

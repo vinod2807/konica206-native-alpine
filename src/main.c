@@ -445,10 +445,14 @@ konica_driver(pappl_system_t *system, const char *driver_name, const char *devic
 
   d->raster_types = PAPPL_PWG_RASTER_TYPE_SGRAY_8;
 
-  /* Full-page geometry (matches KonicaMinolta-206-fullbleed.ppd): no margins. */
-  d->borderless  = true;
-  d->left_right  = 0;
-  d->bottom_top  = 0;
+  /* The bizhub 206 is a plain office laser, not a borderless photo printer:
+   * the engine cannot print on the outer 12 pt of the sheet.  Advertising
+   * zero margins made PAPPL name every size "*.Borderless" and let content
+   * run into the engine's non-printable border, which clipped the document's
+   * own margins.  Advertise the vendor PPD's A4 imageable area instead. */
+  d->borderless  = false;
+  d->left_right  = KONICA_MARGIN_HMM;
+  d->bottom_top  = KONICA_MARGIN_HMM;
 
   d->num_resolution = 2;
   d->x_resolution[0] = d->y_resolution[0] = 300;
@@ -470,6 +474,11 @@ konica_driver(pappl_system_t *system, const char *driver_name, const char *devic
   d->media_default.size_length = 29700;
   papplCopyString(d->media_default.source, "auto", sizeof(d->media_default.source));
   papplCopyString(d->media_default.type, "stationery", sizeof(d->media_default.type));
+  /* PAPPL validates every ready-media entry against left_right/bottom_top; if
+   * these stay zero the whole media list is rejected and the printer loses its
+   * media support. */
+  d->media_default.left_margin = d->media_default.right_margin = KONICA_MARGIN_HMM;
+  d->media_default.bottom_margin = d->media_default.top_margin = KONICA_MARGIN_HMM;
 
   /* TODO(stage 4): confirm tray names against the PPD *InputSlot list. */
   d->num_source = 2;                 /* PAPPL adds "auto" itself */

@@ -49,21 +49,21 @@
 *CloseUI: *PageRegion
 *DefaultImageableArea: A4
 *DefaultPaperDimension: A4
-*ImageableArea A3: "0 0 841.889763779528 1190.551181102362"
+*ImageableArea A3: "12 12 817.889763779528 1166.551181102362"
 *PaperDimension A3: "841.889763779528 1190.551181102362"
-*ImageableArea A4: "0 0 595.275590551181 841.889763779528"
+*ImageableArea A4: "12 12 571.275590551181 817.889763779528"
 *PaperDimension A4: "595.275590551181 841.889763779528"
-*ImageableArea A5: "0 0 419.527559055118 595.275590551181"
+*ImageableArea A5: "12 12 395.527559055118 571.275590551181"
 *PaperDimension A5: "419.527559055118 595.275590551181"
-*ImageableArea A6: "0 0 297.637795275591 419.527559055118"
+*ImageableArea A6: "12 12 273.637795275591 395.527559055118"
 *PaperDimension A6: "297.637795275591 419.527559055118"
-*ImageableArea Executive: "0 0 522 756"
+*ImageableArea Executive: "12 12 498 732"
 *PaperDimension Executive: "522 756"
-*ImageableArea Legal: "0 0 612 1008"
+*ImageableArea Legal: "12 12 588 984"
 *PaperDimension Legal: "612 1008"
-*ImageableArea Letter: "0 0 612 792"
+*ImageableArea Letter: "12 12 588 768"
 *PaperDimension Letter: "612 792"
-*ImageableArea Statement: "0 0 396 612"
+*ImageableArea Statement: "12 12 372 588"
 *PaperDimension Statement: "396 612"
 *OpenUI *InputSlot/Media Source: PickOne
 *OrderDependency: 10 AnySetup *InputSlot

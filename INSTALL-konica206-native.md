@@ -50,7 +50,7 @@ These come from the user's existing working setup. **Check each; if one is missi
 |---|---|---|
 | Vendor raster filter | `/usr/local/lib/konica/KonicaMinolta/245igdi/Filters/245igdirf` | `KONICA_VENDOR_FILTER` |
 | Private libs (libcups, libcupsimage) | `/usr/local/lib/konica/lib/` | `KONICA_LIBDIR` |
-| Full-bleed PPD read by the filter | `/var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd` | `KONICA_PPD` |
+| PPD read by the filter for page-size and option names | `/var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd` | `KONICA_PPD` |
 | PDF -> CUPS raster filter | `/usr/lib/cups/filter/pdftoraster` | `KONICA_RASTER_FILTER` |
 
 ```sh
@@ -274,14 +274,13 @@ Check the logs after each test: `Render failed`, `USB transfer failed`, or `Unab
   **Run this while the queue is idle.** Uploading a PPD makes CUPS restart a
   pending or processing job from page 1, which prints it twice. Check
   `lpstat -o konica206-native` first; if it lists a job, wait for it to finish.
-- Why not `-m everywhere`: the native driver advertises full-bleed geometry
-  (zero margins, matching the vendor filter's expectation), so CUPS'
-  auto-generated `everywhere` PPD lists every size with a `.Borderless`
-  suffix (`A4.Borderless`, `Letter.Borderless`, ...). Functionally identical,
-  but confusing in print dialogs. `dist/konica206-native.ppd` was generated
-  with `driverless ipp://localhost:8001/ipp/print/konica206` and carries real
-  size names (`A4`, `Letter`, ...) with full-page image areas. The IPP values
-  sent to the printer are the same either way, so the render path is unaffected.
+- Why the shipped PPD: `-m everywhere` also works. The driver now advertises
+  the bizhub 206's actual 12 pt imageable margins, so CUPS generates plain
+  `A4`, `Letter`, ... names with a matching imageable area
+  (`*ImageableArea A4: "12 12 583.28 829.89"`). The shipped PPD pins those
+  names. Older full-bleed builds produced `.Borderless` names instead. The IPP
+  values sent to the printer are the same either way, so the render path is
+  unaffected.
 - If the driver's media/option set ever changes, regenerate the file:
   ```sh
   driverless ipp://localhost:8001/ipp/print/konica206 > dist/konica206-native.ppd

@@ -12,6 +12,13 @@
 
 #include <stddef.h>
 
+/* The bizhub 206 engine cannot put toner on the outer 12 pt (4.23 mm) of the
+ * sheet: that is the A4 imageable area in the vendor PPD
+ * ("12 12 583.28 829.89").  The app advertises normal, non-borderless media
+ * with this margin and insets PDF content by the same amount. */
+#define KONICA_MARGIN_POINTS 12.0   /* points, used when rendering */
+#define KONICA_MARGIN_HMM    423    /* hundredths of a millimetre, used by PAPPL */
+
 typedef struct konica_cfg_s
 {
   char vendor_filter[512];   /* KONICA_VENDOR_FILTER */

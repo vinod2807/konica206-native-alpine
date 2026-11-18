@@ -126,14 +126,19 @@ install -D -m 644 KonicaMinolta-206-native.ppd /usr/local/share/konica/
 export KONICA_PPD=/usr/local/share/konica/KonicaMinolta-206-native.ppd
 ```
 
-## Driverless PPD quirks
+## Driverless PPD behaviour
 
-The app reports zero margins for every size, exactly as the vendor PPD does
-(`*ImageableArea A4/A4: "0 0 595 842"`). CUPS's generated `ippeve` PPD therefore
-names every size `<size>.Borderless` (`A4.Borderless`, `Letter.Borderless`, ...)
-and its own `*DefaultPageSize: A4` has no matching entry. Picking a size still
-maps to the plain `iso_a4_210x297mm` / `na_letter_8.5x11in` keyword, so printing
-is unaffected - only the names in CUPS's PPD look odd.
+The app advertises the bizhub 206's real A4 imageable area: a 12 pt (4.23 mm)
+non-printable border on every edge (`media-*-margin-supported = 423`
+hundredths of a millimetre). CUPS's generated `ippeve` PPD therefore lists
+normal sizes (`A4`, `Letter`, ...) with a matching imageable area, e.g.
+`*ImageableArea A4: "12 12 583.28 829.89"`. There are no `.Borderless` names.
+
+With `KONICA_PDF_RENDERER=builtin` the app fits each PDF page into that
+imageable area and pads the result back to the full page, so the engine never
+clips the document's own margins. If you change the margins, keep
+`KONICA_MARGIN_POINTS` / `KONICA_MARGIN_HMM` in `src/konica_filter.h`, the
+`media_ready` margins in `src/main.c`, and this PPD geometry in sync.
 
 ## Verifying without paper
 
@@ -166,6 +171,8 @@ data is missing.
 1. The byte comparison against the **vendor** filter (the test host has the
    runtime data but not the `245igdirf` binary).
 2. The two PDF renderers against each other on the real PPD: the vendor's
-   reference raster is pdftoraster's A4 page (4961x7016, 8-bit, `A4.Borderless`).
+   reference raster is pdftoraster's full-bleed A4 page (4961x7016, 8-bit);
+   the app now renders the 12 pt-inset imageable page and pads it back to the
+   full A4 page, so the old byte-for-byte baseline no longer applies.
 3. The seven trays of the PPD: the driver advertises `auto`, `tray-1` and
    `by-pass-tray` only.
