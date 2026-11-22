@@ -12,7 +12,7 @@ PAPPL 1.3.1, CUPS 2.4.19.
 | PAPPL 1.3.1 | `/usr/local/lib/libpappl.so.1` | Alpine ships no `pappl` package, so it is built from source |
 | vendor stage | `/usr/local/lib/konica/konica-native` | pure C11/libc, from https://github.com/vinod2807/konica-native-musl |
 | vendor runtime data | `/usr/local/lib/konica/KonicaMinolta/245igdi/` | halftone screen + ICC profiles, installed from `vendor/`; see [vendor/NOTICE](../vendor/NOTICE) |
-| PPD | `/usr/local/share/konica/KonicaMinolta-206-native.ppd` | from `vendor/`; optional for the app |
+| PPD | `/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd` | from `vendor/` with `*cupsBackSide: Normal`; optional for the app |
 | OpenRC service | `/etc/init.d/konica206-native` | `dist/konica206-native.initd` |
 | environment | `/etc/conf.d/konica206-native` | `dist/konica206-native.conf` |
 | PAPPL state | `/var/lib/konica206-native.state` | as root; under `$HOME` for a normal user |
@@ -114,17 +114,26 @@ ipptool -tv ipp://localhost:631/printers/konica206-ipp test/validate-job.test
 
 CUPS 3.0 drops PPD support, so the app does not depend on one: the page
 geometry, the tray-to-`MediaPosition` map and the duplex back-side rule
-(`cupsBackSide: Rotated`) are compiled in, and a readable `KONICA_PPD` overrides
-all three. The same job renders to a byte-identical raster and printer stream
-with and without the PPD (verified; `test/test_ppd.c` pins both paths).
+(no pre-rotation: this printer's duplexer binds the long edge itself) are
+compiled in, and a readable `KONICA_PPD` overrides all three. The same job
+renders to a byte-identical raster and printer stream with and without the PPD
+(verified; `test/test_ppd.c` pins both paths).
 
 If you keep one, put it outside CUPS's tree so a CUPS upgrade cannot change the
-app's behaviour:
+app's behaviour, and give the app the **Normal**-backside copy: the vendor PPD
+says `*cupsBackSide: Rotated`, which pre-rotates duplex backs and prints a
+long-edge back page upside down (2026-11-13 paper test,
+`docs/duplex-investigation.md`). The vendor copy stays in place for the
+CUPS/legacy queues.
 
 ```sh
-install -D -m 644 KonicaMinolta-206-native.ppd /usr/local/share/konica/
-export KONICA_PPD=/usr/local/share/konica/KonicaMinolta-206-native.ppd
+sed 's/^\*cupsBackSide:.*/*cupsBackSide: Normal/' KonicaMinolta-206-native.ppd \
+  > /usr/local/share/konica/KonicaMinolta-206-native-normal.ppd
+export KONICA_PPD=/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd
 ```
+
+`scripts/install-alpine.sh` and `scripts/install-ubuntu-puppy.sh` do this
+derivation for you.
 
 ## Driverless PPD behaviour
 

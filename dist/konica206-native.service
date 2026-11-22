@@ -6,11 +6,14 @@ After=network.target
 # Development instance: port 8001, leaves the existing konica206uri app alone.
 Environment=KONICA_VENDOR_FILTER=/usr/local/lib/konica/KonicaMinolta/245igdi/Filters/245igdirf
 Environment=KONICA_LIBDIR=/usr/local/lib/konica/lib
-Environment=KONICA_PPD=/var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd
+# Normal-backside copy of the vendor PPD (see scripts/install-*.sh).  The
+# vendor file says cupsBackSide Rotated, which pre-rotates back pages; the 206
+# binds the long edge itself, so that prints a long-edge back upside down
+# (2026-11-13 paper test, docs/duplex-investigation.md).
+Environment=KONICA_PPD=/usr/local/share/konica/KonicaMinolta-206-native-normal.ppd
 Environment=KONICA_RASTER_FILTER=/usr/lib/cups/filter/pdftoraster
-# Live default: builtin renderer (short-edge/duplex binding fix paper-proven
-# 2026-10-07, docs/duplex-investigation.md). Flip back to `system` if output
-# ever regresses: no rebuild needed, just restart.
+# Live default: builtin renderer (gs pgmraw + own raster writer). Flip back to
+# `system` if output ever regresses: no rebuild needed, just restart.
 Environment=KONICA_PDF_RENDERER=builtin
 ExecStart=/usr/local/bin/konica206-native server -o server-port=8001
 Restart=on-failure
